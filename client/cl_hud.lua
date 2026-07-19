@@ -1,0 +1,185 @@
+--[[
+    bitirim_hud / client
+    Qbox (qbx_core) + ox_lib. Veriyi toplar, DEĞİŞTİĞİNDE NUI'ye yollar.
+    FPS dostu: her tick sadece okur; NUI mesajı yalnızca bir grup değiştiyse gider.
+]]
+
+local qbx = exports.qbx_core
+
+-- Son gönderilen değerler (change-detection)
+local last = { status = {}, money = {}, info = {}, street = {}, vehicle = {} }
+
+-- ------------------------------------------------------------------ helpers
+local function round(v) return math.floor((v or 0) + 0.5) end
+local function send(action, data) SendNUIMessage({ action = action, data = data }) end
+
+-- İki düz tablonun alanları aynı mı?
+local function same(a, b)
+    for k, v in pairs(a) do if b[k] ~= v then return false end end
+    for k, v in pairs(b) do if a[k] ~= v then return false end end
+    return true
+end
+
+local function getPlayerData()
+    local ok, pd = pcall(function() return qbx:GetPlayerData() end)
+    if ok and type(pd) == 'table' then return pd end
+    return nil
+end
+
+-- ------------------------------------------------------------------ fuel
+local function getFuel(veh)
+    local sb = Entity(veh).state.fuel
+    if sb ~= nil then return sb + 0.0 end
+    for _, res in ipairs(Config.FuelResources) do
+        if res ~= 'ox_fuel' and GetResourceState(res) == 'started' then
+            local ok, val = pcall(function() return exports[res]:GetFuel(veh) end)
+            if ok and val then return val + 0.0 end
+        end
+    end
+    return GetVehicleFuelLevel(veh) + 0.0
+end
+
+-- Hız sabitleme: statebag'den oku (kendi cruise scriptin set edebilir)
+local function getCruise()
+    return LocalPlayer.state[Config.CruiseStateKey] == true
+end
+exports('SetCruise', function(v) LocalPlayer.state:set(Config.CruiseStateKey, v == true, true) end)
+
+-- ------------------------------------------------------------------ STATUS loop
+CreateThread(function()
+    while true do
+        local ped = cache.ped
+        local pd  = getPlayerData()
+        local meta = (pd and pd.metadata) or {}
+
+        -- Can / zırh / yemek / su
+        if Config.Show.status then
+            local st = {
+                health = round(((GetEntityHealth(ped) - 100) / 100) * 100), -- 100..200 -> 0..100
+                armor  = round(GetPedArmour(ped)),
+                hunger = round(meta.hunger or 100),
+                thirst = round(meta.thirst or 100),
+            }
+            if st.health < 0 then st.health = 0 end
+            if not same(st, last.status) then last.status = st; send('status', st) end
+        end
+
+        -- Para
+        if Config.Show.money then
+            local money = (pd and pd.money) or {}
+            local m = { cash = round(money.cash or 0), bank = round(money.bank or 0) }
+            if not same(m, last.money) then last.money = m; send('money', m) end
+        end
+
+        -- Bilgi: ID + aktif oyuncu + saat
+        if Config.Show.info then
+            local info = {
+                id      = LocalPlayer.state.bitirimId or '—',
+                players = GlobalState.bitirimPlayers or 0,
+                hour    = GetClockHours(),
+                minute  = GetClockMinutes(),
+            }
+            if not same(info, last.info) then last.info = info; send('info', info) end
+        end
+
+        -- Cadde ismi
+        if Config.Show.street then
+            local p = GetEntityCoords(ped)
+            local s = GetStreetNameFromHashKey(GetStreetNameAtCoord(p.x, p.y, p.z))
+            local street = { name = s ~= '' and s or '—' }
+            if not same(street, last.street) then last.street = street; send('street', street) end
+        end
+
+        Wait(Config.StatusTick)
+    end
+end)
+
+-- ------------------------------------------------------------------ VEHICLE loop
+CreateThread(function()
+    while true do
+        local veh  = cache.vehicle
+        local wait = Config.VehicleTick
+
+        if Config.Show.vehicle and veh and cache.seat == -1 then
+            local mps   = GetEntitySpeed(veh)
+            local speed = Config.SpeedUnit == 'mph' and (mps * 2.236936) or (mps * 3.6)
+
+            local vd = {
+                visible  = true,
+                speed    = round(speed),
+                unit     = Config.SpeedUnit,
+                seatbelt = (Entity(veh).state.seatbelt == true),
+                engineOn = GetIsVehicleEngineRunning(veh) == 1 or GetIsVehicleEngineRunning(veh) == true,
+                locked   = GetVehicleDoorLockStatus(veh) == 2,
+                cruise   = getCruise(),
+                fuel     = round(getFuel(veh)),
+                health   = round((GetVehicleEngineHealth(veh) / 1000) * 100),
+            }
+            if vd.health < 0 then vd.health = 0 end
+            if vd.health > 100 then vd.health = 100 end
+            if not same(vd, last.vehicle) then last.vehicle = vd; send('vehicle', vd) end
+        else
+            if last.vehicle.visible ~= false then
+                last.vehicle = { visible = false }
+                send('vehicle', { visible = false })
+                wait = Config.StatusTick
+            end
+        end
+
+        Wait(wait)
+    end
+end)
+
+-- ------------------------------------------------------------------ init
+CreateThread(function()
+    Wait(500)
+    send('config', { show = Config.Vehicle, unit = Config.SpeedUnit,
+                     fuelLow = Config.FuelLowAt, engLow = Config.EngineLowAt,
+                     groups = Config.Show })
+end)
+
+-- Varsayılan GTA HUD parçalarını gizle (para + araç adı + bölge adı). Kendi verimiz NUI'de.
+if Config.HideDefaultCash or Config.HideVehicleName or Config.HideAreaNames then
+    CreateThread(function()
+        while true do
+            if Config.HideDefaultCash then
+                HideHudComponentThisFrame(3)  -- HUD_CASH
+                HideHudComponentThisFrame(4)  -- HUD_MP_CASH
+            end
+            if Config.HideVehicleName then
+                HideHudComponentThisFrame(6)  -- HUD_VEHICLE_NAME
+                HideHudComponentThisFrame(8)  -- HUD_VEHICLE_CLASS
+            end
+            if Config.HideAreaNames then
+                HideHudComponentThisFrame(7)  -- HUD_AREA_NAME (bölge/mahalle)
+            end
+            Wait(0)
+        end
+    end)
+end
+
+-- GTA can/zırh çubuklarını gizle — minimap boyutuna dokunmaz (bigmap yenilemesi YOK)
+if Config.HideDefaultHealthArmor then
+    CreateThread(function()
+        local mm = RequestScaleformMovie('minimap')
+        while not HasScaleformMovieLoaded(mm) do Wait(0); mm = RequestScaleformMovie('minimap') end
+        while true do
+            BeginScaleformMovieMethod(mm, 'SETUP_HEALTH_ARMOUR')
+            ScaleformMovieMethodAddParamInt(3)  -- 3 = can+zırh gizli
+            EndScaleformMovieMethod()
+            Wait(0)
+        end
+    end)
+end
+
+-- Bitirim: let other resources (e.g. bitirim_spawn) hide the entire HUD.
+-- Reuses the existing .hidden utility class on the #hud wrapper.
+AddEventHandler('bitirim_hud:client:setVisible', function(visible)
+    send('visible', { visible = visible ~= false })
+end)
+
+-- Bitirim: let other resources (e.g. bitirim_spawn) hide the entire HUD.
+-- Reuses the existing .hidden utility class on the #hud wrapper.
+AddEventHandler('bitirim_hud:client:setVisible', function(visible)
+    send('visible', { visible = visible ~= false })
+end)
