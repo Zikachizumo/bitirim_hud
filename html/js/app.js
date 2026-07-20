@@ -12,6 +12,10 @@
   // Eşikler (config'ten güncellenir)
   let fuelLow = 15, engLow = 30;
 
+  // Yakıt göstergesi config'te açık mı? Araç bazlı gizleme (bisiklet) bu
+  // ayarı geçersiz kılmamalı — kapalıysa kapalı kalsın.
+  let fuelEnabled = true;
+
   // Para fade için son değerler
   let shownCash = null, shownBank = null;
 
@@ -61,6 +65,7 @@
       for (const key in map) {
         if (v[key] === false) { const el = $(map[key]); if (el) el.style.display = 'none'; }
       }
+      fuelEnabled = v.fuel !== false;
 
       $('speedUnit').textContent = data.unit === 'mph' ? 'MPH' : 'KM/H';
       return;
@@ -154,11 +159,16 @@
       $('fuelVal').textContent = data.fuel + '%';
       $('mtFuel').classList.toggle('crit', data.fuel < 25);
 
-      // Elektrikli araçta benzin bidonu yerine şimşek ikonu.
+      // Yakıt türü: 'petrol' bidon, 'electric' şimşek, 'none' hiç gösterme.
+      // 'none' bisiklet gibi motoru olmayan araçlar için — onların deposu da
+      // yok, o yüzden depo hacmi kuralına takılıp elektrikli görünüyorlardı.
+      const ftype = data.fuelType || 'petrol';
+      $('mtFuel').style.display = (fuelEnabled && ftype !== 'none') ? '' : 'none';
+
       const fuelIcon = $('mtFuel').querySelector('.ic');
       if (fuelIcon) {
-        fuelIcon.classList.toggle('ic-electric', !!data.electric);
-        fuelIcon.classList.toggle('ic-fuel', !data.electric);
+        fuelIcon.classList.toggle('ic-electric', ftype === 'electric');
+        fuelIcon.classList.toggle('ic-fuel', ftype === 'petrol');
       }
       $('healthVal').textContent = data.health + '%';
       $('mtHealth').classList.toggle('crit', data.health < 25);

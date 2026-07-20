@@ -30,21 +30,33 @@ end
 -- Elektrikli araçların benzin deposu yok: handling'deki fPetrolTankVolume 0.
 -- Model listesi tutmaya gerek yok, kural genel. (Ölçüm: Khamelion -> depo 0.0,
 -- native fuel 0.0, ox_fuel statebag'i nil.)
-local elecCache = {}
+local fuelTypeCache = {}
 
-local function isElectric(veh)
-    local cached = elecCache[veh]
+-- Motoru olmayan araçlar: yakıt da şarj da göstermeyiz. Bisikletlerin benzin
+-- deposu yok, o yüzden depo hacmi kuralına takılıp "elektrikli" görünüyorlardı.
+local NO_FUEL_CLASSES = { [13] = true }   -- 13 = Cycles (bisikletler)
+
+--- 'none' | 'electric' | 'petrol'
+local function getFuelType(veh)
+    local cached = fuelTypeCache[veh]
     if cached ~= nil then return cached end
 
-    local volume = GetVehicleHandlingFloat(veh, 'CHandlingData', 'fPetrolTankVolume')
-    local result = (volume or 0.0) <= 0.0
-    elecCache[veh] = result
+    local result
+    if NO_FUEL_CLASSES[GetVehicleClass(veh)] then
+        result = 'none'
+    elseif (GetVehicleHandlingFloat(veh, 'CHandlingData', 'fPetrolTankVolume') or 0.0) <= 0.0 then
+        result = 'electric'
+    else
+        result = 'petrol'
+    end
+
+    fuelTypeCache[veh] = result
     return result
 end
 
 -- Araç yok olunca önbelleği bırak, entity id'leri geri dönüştürülüyor.
 AddEventHandler('entityRemoved', function(entity)
-    elecCache[entity] = nil
+    fuelTypeCache[entity] = nil
 end)
 
 -- ------------------------------------------------------------------ fuel
@@ -60,11 +72,11 @@ local function getPetrolFuel(veh)
     return GetVehicleFuelLevel(veh) + 0.0
 end
 
-local function getFuel(veh)
+local function getFuel(veh, ftype)
     -- Elektrikli: ox_fuel bu araçları takip etmiyor, native de 0 döner.
-    -- İleride bir şarj sistemi statebag'i doldurursa onu kullanırız; yoksa
-    -- config'teki sabit değer gösterilir.
-    if isElectric(veh) then
+    -- bitirim_vehicles şarjı statebag'e yazıyor; henüz yazmadıysa (araç ilk
+    -- kez görülüyor) config'teki başlangıç değeri gösterilir.
+    if ftype == 'electric' then
         local sb = Entity(veh).state.fuel
         if sb ~= nil then return sb + 0.0 end
         return Config.ElectricCharge + 0.0
@@ -138,6 +150,7 @@ CreateThread(function()
         if Config.Show.vehicle and veh and cache.seat == -1 then
             local mps   = GetEntitySpeed(veh)
             local speed = Config.SpeedUnit == 'mph' and (mps * 2.236936) or (mps * 3.6)
+            local ftype = getFuelType(veh)
 
             local vd = {
                 visible  = true,
@@ -147,8 +160,8 @@ CreateThread(function()
                 engineOn = GetIsVehicleEngineRunning(veh) == 1 or GetIsVehicleEngineRunning(veh) == true,
                 locked   = GetVehicleDoorLockStatus(veh) == 2,
                 cruise   = getCruise(),
-                fuel     = round(getFuel(veh)),
-                electric = isElectric(veh),
+                fuel     = ftype ~= 'none' and round(getFuel(veh, ftype)) or 0,
+                fuelType = ftype,
                 health   = round((GetVehicleEngineHealth(veh) / 1000) * 100),
             }
             if vd.health < 0 then vd.health = 0 end
