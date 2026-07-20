@@ -45,6 +45,13 @@ Config.HideDefaultHealthArmor = true
 -- Yakıt kaynakları (sırayla denenir; statebag/ox_fuel önceliklidir)
 Config.FuelResources = { 'ox_fuel', 'cdn-fuel', 'ps-fuel', 'LegacyFuel' }
 
+-- Elektrikli araçlarda (benzin deposu olmayan modeller) yakıt bidonu yerine
+-- şimşek ikonu gösterilir. ox_fuel bu araçları takip etmediği için gerçek bir
+-- şarj değeri yok — aşağıdaki sabit gösterilir.
+-- İleride bir şarj sistemi Entity(veh).state.fuel'i doldurursa HUD otomatik
+-- olarak onu kullanmaya başlar, burayı değiştirmene gerek kalmaz.
+Config.ElectricCharge = 100
+
 -- Hız sabitleme statebag anahtarı (kendi cruise scriptin bunu set edebilir,
 -- ya da exports.bitirim_hud:SetCruise(true/false) çağırabilirsin)
 Config.CruiseStateKey = 'cruise'
