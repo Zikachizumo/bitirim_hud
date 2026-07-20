@@ -130,12 +130,24 @@ CreateThread(function()
     end
 end)
 
+-- ------------------------------------------------------------------ HOTKEYS
+-- Araç butonlarının altında gösterilen tuşlar. bitirim_vehicles yolluyor;
+-- o resource yoksa hiçbir şey gelmez ve tuşlar gizli kalır.
+-- Oyuncu tuşunu değiştirirse bitirim_vehicles güncelini tekrar gönderir.
+AddEventHandler('bitirim_hud:hotkeys:set', function(keys)
+    if type(keys) ~= 'table' then return end
+    send('hotkeys', keys)
+end)
+
 -- ------------------------------------------------------------------ init
 CreateThread(function()
     Wait(500)
     send('config', { show = Config.Vehicle, unit = Config.SpeedUnit,
                      fuelLow = Config.FuelLowAt, engLow = Config.EngineLowAt,
                      groups = Config.Show })
+
+    -- Tuşları iste — HUD, bitirim_vehicles'tan sonra başlamış olabilir.
+    TriggerEvent('bitirim_hud:hotkeys:request')
 end)
 
 -- Varsayılan GTA HUD parçalarını gizle (para + araç adı + bölge adı). Kendi verimiz NUI'de.

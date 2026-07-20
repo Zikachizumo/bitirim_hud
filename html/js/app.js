@@ -66,6 +66,20 @@
       return;
     }
 
+    // ---------------- hotkeys: araç butonlarının altındaki tuşlar ----------------
+    // bitirim_vehicles gönderir. Oyuncu tuşunu değiştirdiğinde güncellenir.
+    if (action === 'hotkeys') {
+      const map = { engine:'hkEngine', seatbelt:'hkBelt', cruise:'hkCruise', lock:'hkLock' };
+      for (const name in map) {
+        const el = $(map[name]);
+        if (!el) continue;
+        const key = data && data[name];
+        el.textContent = key || '';
+        el.classList.toggle('show', !!key);
+      }
+      return;
+    }
+
     // ---------------- durum: can / zırh / yemek / su ----------------
     if (action === 'status') {
       $('status').classList.remove('hidden');
