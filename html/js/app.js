@@ -103,6 +103,13 @@
       $('cluster').classList.remove('hidden');
       $('idVal').textContent = data.id;
       $('playersVal').textContent = data.players;
+      return;
+    }
+
+    // ---------------- saat: VPS sistem saati ----------------
+    // Tek kaynak client/clock.lua. 'info' bilerek saate dokunmuyor —
+    // iki kaynak aynı alana yazarsa saat oyun saati ile zıplar.
+    if (action === 'clock') {
       $('timeVal').textContent = pad2(data.hour) + ':' + pad2(data.minute);
       return;
     }
