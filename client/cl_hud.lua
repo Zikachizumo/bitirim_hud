@@ -110,8 +110,9 @@ CreateThread(function()
             local info = {
                 id      = LocalPlayer.state.bitirimId or '—',
                 players = GlobalState.bitirimPlayers or 0,
-                hour    = GetClockHours(),
-                minute  = GetClockMinutes(),
+                -- Saat bilerek burada YOK. #timeVal'i client/clock.lua besliyor
+                -- (VPS sistem saati). Buradan oyun saatini de gönderirsek iki
+                -- kaynak aynı alana yazar ve saat zıplar.
             }
             if not same(info, last.info) then last.info = info; send('info', info) end
         end

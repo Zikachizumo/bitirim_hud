@@ -16,6 +16,20 @@ Config.Show = {
     vehicle = true,   -- araç paneli (sağ alt)
 }
 
+-- HUD saati — VPS sistem saatinden beslenir (oyun içi saatten DEĞİL).
+-- Sunucu tek zaman otoritesidir: dakika değiştiğinde bir kez yayın yapar,
+-- yeni katılan oyuncuya anlık tekil mesaj gönderir. İstemci hiç saat
+-- hesaplamaz, sadece NUI'ye iletir. Bkz. server/clock.lua ve client/clock.lua.
+Config.Clock = {
+    -- Sunucu -> istemci saat yayını
+    updateEvent  = 'bitirim_hud:client:clockUpdate',
+    -- İstemci -> sunucu "saati şimdi gönder" isteği (katılış / resource restart)
+    requestEvent = 'bitirim_hud:server:clockRequest',
+    -- Sunucunun dakika değişimini kontrol etme sıklığı (ms).
+    -- Paket yalnızca dakika sınırında gider, bu sadece kontrol aralığı.
+    pollInterval = 1000,
+}
+
 -- Araç panelinde hangi ikonlar görünsün
 Config.Vehicle = {
     seatbelt = true,  -- kemer (istemezsen false yap)

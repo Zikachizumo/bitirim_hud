@@ -15,11 +15,13 @@ shared_scripts {
 }
 
 client_scripts {
-    'client/cl_hud.lua'
+    'client/cl_hud.lua',
+    'client/clock.lua'
 }
 
 server_scripts {
-    'server/sv_hud.lua'
+    'server/sv_hud.lua',
+    'server/clock.lua'
 }
 
 files {
