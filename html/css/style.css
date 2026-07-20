@@ -187,6 +187,18 @@ body{
 .dot .ic{ width:1.5rem; height:1.5rem; }
 .ind .val{ font-size:0.95rem; font-weight:600; color:#ffffff; font-variant-numeric:tabular-nums; }
 
+/* Kısayol tuşu etiketi — bitirim_vehicles gönderir, o resource yoksa gizli.
+   Oyuncu tuşunu değiştirirse buradaki yazı da değişir. */
+.hk{ display:none; font-size:0.68rem; font-weight:600; line-height:1;
+     color:rgba(255,255,255,.55); padding:0.16rem 0.32rem; border-radius:0.3rem;
+     background:var(--glass-2); border:1px solid rgba(255,255,255,.08);
+     transition: color .3s ease;
+     /* Beklenmedik uzun tuş adı paneli yana kaydırmasın (emniyet supabı —
+        asıl kısaltma bitirim_vehicles tarafında yapılıyor). */
+     max-width:3.6rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hk.show{ display:block; }
+.ind.on .hk{ color:rgba(255,255,255,.85); }
+
 /* Motor / kemer / kilit / cruise aktifken YEŞİL (pasif beyaz) */
 .ind.on .dot{ color:var(--seg-green); border-color:rgba(79,208,138,.5); box-shadow:0 0 1rem rgba(79,208,138,.45); }
 
