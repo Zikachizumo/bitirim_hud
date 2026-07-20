@@ -158,7 +158,10 @@ CreateThread(function()
                 visible  = true,
                 speed    = round(speed),
                 unit     = Config.SpeedUnit,
-                seatbelt = (Entity(veh).state.seatbelt == true),
+                -- Kemer OYUNCUDA tutuluyor, araçta değil. Araç statebag'i
+                -- kullanıldığında önceki sürücünün kemeri yeni binene ait
+                -- görünüyor, yolcu ile sürücü de birbirini eziyordu.
+                seatbelt = (LocalPlayer.state.seatbelt == true),
                 engineOn = GetIsVehicleEngineRunning(veh) == 1 or GetIsVehicleEngineRunning(veh) == true,
                 locked   = GetVehicleDoorLockStatus(veh) == 2,
                 cruise   = getCruise(),
