@@ -146,6 +146,13 @@
       // Yakıt ve motor sağlığı: %25 altında kırmızı
       $('fuelVal').textContent = data.fuel + '%';
       $('mtFuel').classList.toggle('crit', data.fuel < 25);
+
+      // Elektrikli araçta benzin bidonu yerine şimşek ikonu.
+      const fuelIcon = $('mtFuel').querySelector('.ic');
+      if (fuelIcon) {
+        fuelIcon.classList.toggle('ic-electric', !!data.electric);
+        fuelIcon.classList.toggle('ic-fuel', !data.electric);
+      }
       $('healthVal').textContent = data.health + '%';
       $('mtHealth').classList.toggle('crit', data.health < 25);
       return;
