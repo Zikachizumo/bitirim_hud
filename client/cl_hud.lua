@@ -26,8 +26,29 @@ local function getPlayerData()
     return nil
 end
 
+-- ------------------------------------------------------------------ elektrik
+-- Elektrikli araçların benzin deposu yok: handling'deki fPetrolTankVolume 0.
+-- Model listesi tutmaya gerek yok, kural genel. (Ölçüm: Khamelion -> depo 0.0,
+-- native fuel 0.0, ox_fuel statebag'i nil.)
+local elecCache = {}
+
+local function isElectric(veh)
+    local cached = elecCache[veh]
+    if cached ~= nil then return cached end
+
+    local volume = GetVehicleHandlingFloat(veh, 'CHandlingData', 'fPetrolTankVolume')
+    local result = (volume or 0.0) <= 0.0
+    elecCache[veh] = result
+    return result
+end
+
+-- Araç yok olunca önbelleği bırak, entity id'leri geri dönüştürülüyor.
+AddEventHandler('entityRemoved', function(entity)
+    elecCache[entity] = nil
+end)
+
 -- ------------------------------------------------------------------ fuel
-local function getFuel(veh)
+local function getPetrolFuel(veh)
     local sb = Entity(veh).state.fuel
     if sb ~= nil then return sb + 0.0 end
     for _, res in ipairs(Config.FuelResources) do
@@ -37,6 +58,19 @@ local function getFuel(veh)
         end
     end
     return GetVehicleFuelLevel(veh) + 0.0
+end
+
+local function getFuel(veh)
+    -- Elektrikli: ox_fuel bu araçları takip etmiyor, native de 0 döner.
+    -- İleride bir şarj sistemi statebag'i doldurursa onu kullanırız; yoksa
+    -- config'teki sabit değer gösterilir.
+    if isElectric(veh) then
+        local sb = Entity(veh).state.fuel
+        if sb ~= nil then return sb + 0.0 end
+        return Config.ElectricCharge + 0.0
+    end
+
+    return getPetrolFuel(veh)
 end
 
 -- Hız sabitleme: statebag'den oku (kendi cruise scriptin set edebilir)
@@ -113,6 +147,7 @@ CreateThread(function()
                 locked   = GetVehicleDoorLockStatus(veh) == 2,
                 cruise   = getCruise(),
                 fuel     = round(getFuel(veh)),
+                electric = isElectric(veh),
                 health   = round((GetVehicleEngineHealth(veh) / 1000) * 100),
             }
             if vd.health < 0 then vd.health = 0 end
