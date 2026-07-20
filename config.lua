@@ -66,6 +66,12 @@ Config.FuelResources = { 'ox_fuel', 'cdn-fuel', 'ps-fuel', 'LegacyFuel' }
 -- olarak onu kullanmaya başlar, burayı değiştirmene gerek kalmaz.
 Config.ElectricCharge = 100
 
+-- Şarjın okunduğu statebag anahtarı. bitirim_vehicles buraya yazar.
+-- Bilerek 'fuel' DEĞİL: ox_fuel o anahtarı kullanıyor ve elektrikli araçlarda
+-- değeri 100'e geri çekip şarj tüketimini eziyordu.
+-- bitirim_vehicles/config.lua > electric.stateKey ile aynı olmalı.
+Config.ElectricStateKey = 'charge'
+
 -- Hız sabitleme statebag anahtarı (kendi cruise scriptin bunu set edebilir,
 -- ya da exports.bitirim_hud:SetCruise(true/false) çağırabilirsin)
 Config.CruiseStateKey = 'cruise'

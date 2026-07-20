@@ -77,7 +77,9 @@ local function getFuel(veh, ftype)
     -- bitirim_vehicles şarjı statebag'e yazıyor; henüz yazmadıysa (araç ilk
     -- kez görülüyor) config'teki başlangıç değeri gösterilir.
     if ftype == 'electric' then
-        local sb = Entity(veh).state.fuel
+        -- Kendi anahtarımız — 'fuel' değil. ox_fuel elektrikli araçlarda
+        -- 'fuel'i 100'e geri çekiyor ve tüketimi eziyordu.
+        local sb = Entity(veh).state[Config.ElectricStateKey]
         if sb ~= nil then return sb + 0.0 end
         return Config.ElectricCharge + 0.0
     end
