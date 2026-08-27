@@ -46,6 +46,25 @@
       return;
     }
 
+    // ---------------- bitirim_cinematic: bölüm bölüm göster/gizle ----------------
+    // Yukarıdaki 'config' handler'daki kalıcı gizlemeden ayrı tutuluyor —
+    // o tek seferlik/kalıcı, bu ise cinematic moda girip çıkarken geri
+    // alınabilir olmalı. display='' ile bırakınca, o bölümün kendi normal
+    // (data/vehicle-varlığı bazlı) görünürlük mantığı devreye giriyor.
+    if (action === 'sectionVisible') {
+      const { section, visible } = data || {};
+      const map = {
+        status: () => [$('status')],
+        street: () => [$('street')],
+        vehicle: () => [$('vehicle')],
+        money: () => Array.from(document.querySelectorAll('[data-group="money"]')),
+        info: () => Array.from(document.querySelectorAll('[data-group="info"]')),
+      };
+      const getEls = map[section];
+      if (getEls) getEls().forEach((el) => { if (el) el.style.display = visible === false ? 'none' : ''; });
+      return;
+    }
+
     // ---------------- config: görünürlük + eşikler ----------------
     if (action === 'config') {
       fuelLow = data.fuelLow ?? fuelLow;

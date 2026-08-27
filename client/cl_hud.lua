@@ -244,8 +244,51 @@ AddEventHandler('bitirim_hud:client:setVisible', function(visible)
     send('visible', { visible = visible ~= false })
 end)
 
--- Bitirim: let other resources (e.g. bitirim_spawn) hide the entire HUD.
--- Reuses the existing .hidden utility class on the #hud wrapper.
-AddEventHandler('bitirim_hud:client:setVisible', function(visible)
-    send('visible', { visible = visible ~= false })
+-- ------------------------------------------------------------------ bitirim_cinematic entegrasyonu
+-- Artık hepsini birden değil, /cinesettings'te seçilen HUD gruplarına
+-- göre BÖLÜM BÖLÜM gizliyoruz/gösteriyoruz. bitirim_cinematic kurulu
+-- değilse bu event'ler hiç tetiklenmez, zararsız (fxmanifest'e
+-- dependency olarak eklemiyoruz — opsiyonel entegrasyon).
+local BH_GROUP_MAP = {
+    hud_status  = 'status',
+    hud_money   = 'money',
+    hud_info    = 'info',
+    hud_street  = 'street',
+    hud_vehicle = 'vehicle',
+}
+
+local function ApplyHudGroupState(hidden)
+    if type(hidden) ~= 'table' then return end
+    for cinematicId, localSection in pairs(BH_GROUP_MAP) do
+        send('sectionVisible', { section = localSection, visible = hidden[cinematicId] ~= true })
+    end
+end
+
+AddEventHandler('bitirim_cinematic:hudGroupsChanged', function(hidden)
+    ApplyHudGroupState(hidden)
+end)
+
+AddEventHandler('bitirim_cinematic:started', function()
+    local ok, hidden = pcall(function() return exports.bitirim_cinematic:GetHudGroupsHidden() end)
+    if ok then ApplyHudGroupState(hidden) end
+end)
+
+AddEventHandler('bitirim_cinematic:stopped', function()
+    -- Cinematic mod komple bitince kontrolü bitirim_hud'un kendi
+    -- Config.Show ayarlarına geri bırak — hepsini görünür yap.
+    for _, localSection in pairs(BH_GROUP_MAP) do
+        send('sectionVisible', { section = localSection, visible = true })
+    end
+end)
+
+-- bitirim_hud, sinematik mod ZATEN aktifken (yeniden) başlarsa
+-- (örn. canlı restart), mevcut durumla senkronize ol.
+CreateThread(function()
+    Wait(500)
+    if GetResourceState('bitirim_cinematic') ~= 'started' then return end
+    local ok, isCinematic = pcall(function() return exports.bitirim_cinematic:IsCinematicMode() end)
+    if ok and isCinematic then
+        local ok2, hidden = pcall(function() return exports.bitirim_cinematic:GetHudGroupsHidden() end)
+        if ok2 then ApplyHudGroupState(hidden) end
+    end
 end)
