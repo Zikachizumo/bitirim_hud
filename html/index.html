@@ -27,7 +27,15 @@
                 <div class="w-row bank"><span class="ic ic-bank"></span><span class="w-cur">$</span><span class="w-amt" id="bankVal">0</span></div>
                 <div class="w-row cash"><span class="ic ic-cash"></span><span class="w-cur">$</span><span class="w-amt" id="cashVal">0</span></div>
             </div>
-
+            <!-- Aranma yildizlari (para ile saat arasi). Aranma yokken
+                 tamamen gizli - saat yukari kayar, HUD eski haline doner. -->
+            <div class="wanted hidden" id="wantedRow" data-group="info">
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+            </div>
             <!-- Saat (para altında) -->
             <div class="time" id="timeVal" data-group="info">00:00</div>
         </section>

@@ -209,3 +209,32 @@ body{
     .w-amt.fade{ animation:none; }
     .stat .pct{ transition:none; }
 }
+/* ---- Aranma yildizlari (sag ust: para ile saat arasi) ----
+   Aranma yokken .hidden ile komple kaldirilir; satir yer kaplamaz. */
+.wanted{
+    display:flex; align-items:center; gap:0.45rem;
+    margin-top:0.15rem;
+    animation: wantedIn .25s ease;
+}
+.wanted .star{
+    font-size:2.6rem; line-height:1;
+    color: rgba(255,255,255,0.16);          /* kazanilmamis yildiz */
+    transition: color .2s ease, text-shadow .2s ease;
+}
+.wanted .star.on{
+    color: var(--gold);
+    text-shadow: 0 0 0.6rem rgba(212,175,55,.55), var(--shadow);
+}
+.wanted .star.on.pulse{ animation: starPulse .5s ease; }
+
+@keyframes wantedIn{
+    from{ opacity:0; transform:translateY(-0.3rem); }
+    to  { opacity:1; transform:none; }
+}
+@keyframes starPulse{
+    0%{ transform:scale(1); } 40%{ transform:scale(1.25); } 100%{ transform:scale(1); }
+}
+@media (prefers-reduced-motion: reduce){
+    .wanted{ animation:none; }
+    .wanted .star.on.pulse{ animation:none; }
+}

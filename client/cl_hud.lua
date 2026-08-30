@@ -7,7 +7,7 @@
 local qbx = exports.qbx_core
 
 -- Son gönderilen değerler (change-detection)
-local last = { status = {}, money = {}, info = {}, street = {}, vehicle = {} }
+local last = { status = {}, money = {}, info = {}, street = {}, vehicle = {}, wanted = {} }
 
 -- ------------------------------------------------------------------ helpers
 local function round(v) return math.floor((v or 0) + 0.5) end
@@ -129,6 +129,14 @@ CreateThread(function()
                 -- kaynak aynı alana yazar ve saat zıplar.
             }
             if not same(info, last.info) then last.info = info; send('info', info) end
+        end
+
+        -- Aranma seviyesi (yildizlar). Oyundan DOGRUDAN okunur: hangi resource
+        -- verirse versin (ev soygunu, banka, polise ates) HUD'da gorunur.
+        -- Degismedikce NUI mesaji gitmez - ek yuk yok.
+        if Config.Show.wanted ~= false then
+            local w = { level = GetPlayerWantedLevel(cache.playerId) }
+            if not same(w, last.wanted) then last.wanted = w; send('wanted', w) end
         end
 
         -- Cadde ismi
